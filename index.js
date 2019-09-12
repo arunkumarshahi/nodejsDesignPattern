@@ -5,10 +5,21 @@ const FindPattern = require('./FindPattern.js');
 const express = require('express');
 const level = require('level');
 const levelSubscribe = require('./LevelSubscribe');
+const createLoggingWritable = require('./loggingWritable');
 
 const app = express();
 const port = 3000;
 
+function invokeProxy() {
+	const writable = fs.createWriteStream('xtest.json');
+
+	const writableProxy = createLoggingWritable(writable);
+
+	writableProxy.write('First chunk');
+	writableProxy.write('Second chunk');
+	writable.write('This is not logged');
+	writableProxy.end();
+}
 // import FindPattern from './FindPattern.js';
 function inconsistentRead(filename, callback) {
 	if (cache[filename]) {
@@ -46,6 +57,9 @@ function checkRegex() {
 		.on('error', (err) => console.log(`Error emitted ${err.message}`));
 }
 app.listen(port, () => console.log(`Example app listening on port ${port}!`));
+app.get('/proxy', (request, response) => {
+	invokeProxy();
+});
 app.get('/decorator', (request, response) => {
 	// Send the HTTP header
 	// HTTP Status: 200 : OK
